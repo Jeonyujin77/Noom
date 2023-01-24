@@ -17,12 +17,29 @@ const server = http.createServer(app);
 // WebSocket Server
 const wss = new WebSocket.Server({ server });
 
+// 연결된 사용자들을 저장한다
+const sockets = [];
+
 // socket: 연결된 브라우저
 wss.on("connection", (socket) => {
+  sockets.push(socket);
+  socket["nickname"] = "Anonymous";
   console.log("Connected to Browser ✅");
   socket.on("close", () => console.log("Disconnected from Browser ❌"));
-  socket.on("message", (message) => console.log(message.toString()));
-  socket.send("hello");
+  socket.on("message", (msg) => {
+    const message = JSON.parse(msg);
+
+    switch (message.type) {
+      case "new_message":
+        sockets.forEach((aSocket) => {
+          aSocket.send(`${socket.nickname}: ${message.payload}`);
+        });
+        break;
+      case "nickname":
+        socket["nickname"] = message.payload;
+        break;
+    }
+  });
 });
 
 // 동일한 포트에서 http, ws request 두 개를 다 처리할 수 있다
