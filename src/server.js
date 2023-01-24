@@ -1,5 +1,6 @@
 import http from "http";
-import WebSocket from "ws";
+// import WebSocket from "ws";
+import SocketIO from "socket.io";
 import express from "express";
 
 const app = express();
@@ -13,7 +14,23 @@ app.get("/*", (_, res) => res.redirect("/"));
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 
 // HTTP Server
-const server = http.createServer(app);
+const httpServer = http.createServer(app);
+// WebSocket Server
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+  socket.on("enter_room", (roomName, done) => {
+    console.log(roomName);
+
+    setTimeout(() => {
+      // 보안문제로 backend에서 이 코드를 실행 시키지 않는다.
+      // 예) 데이터베이스를 날리는 코드일 수 있다.
+      done("hello from the backend.");
+    }, 15000);
+  });
+});
+
+/* 
 // WebSocket Server
 const wss = new WebSocket.Server({ server });
 
@@ -40,7 +57,7 @@ wss.on("connection", (socket) => {
         break;
     }
   });
-});
+}); */
 
 // 동일한 포트에서 http, ws request 두 개를 다 처리할 수 있다
-server.listen(3000, handleListen);
+httpServer.listen(3000, handleListen);

@@ -1,4 +1,23 @@
-const messageList = document.querySelector("ul");
+const socket = io();
+
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+
+// 백엔드에서 실행시키는 함수
+function backendDone(msg) {
+  console.log(`The backend says: ${msg}`);
+}
+
+function handleRoomSubmit(event) {
+  event.preventDefault();
+  const input = form.querySelector("input");
+  socket.emit("enter_room", { payload: input.value }, backendDone);
+  input.value = "";
+}
+
+form.addEventListener("submit", handleRoomSubmit);
+
+/* const messageList = document.querySelector("ul");
 const nickForm = document.querySelector("#nickname");
 const messageForm = document.querySelector("#message");
 
@@ -43,3 +62,4 @@ function handleNickSubmit(event) {
 
 messageForm.addEventListener("submit", handleSubmit);
 nickForm.addEventListener("submit", handleNickSubmit);
+ */
