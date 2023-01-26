@@ -2,20 +2,78 @@ const socket = io();
 
 const welcome = document.getElementById("welcome");
 const form = welcome.querySelector("form");
+const room = document.getElementById("room");
 
-// 백엔드에서 실행시키는 함수
-function backendDone(msg) {
-  console.log(`The backend says: ${msg}`);
+room.hidden = true;
+
+let roomName;
+
+// 화면에 메시지 추가
+function addMessage(message) {
+  const ul = room.querySelector("ul");
+  const li = document.createElement("li");
+  li.innerText = message;
+  ul.appendChild(li);
+}
+
+// 메시지 전송 이벤트
+function handleMessageSubmit(event) {
+  event.preventDefault();
+  const input = room.querySelector("#msg input");
+  const value = input.value;
+  socket.emit("new_message", input.value, roomName, () => {
+    addMessage(`You: ${value}`);
+  });
+  input.value = "";
+}
+
+// 채팅방 입장
+function showRoom() {
+  welcome.hidden = true;
+  room.hidden = false;
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName}`;
+  const msgForm = room.querySelector("#msg");
+  msgForm.addEventListener("submit", handleMessageSubmit);
 }
 
 function handleRoomSubmit(event) {
   event.preventDefault();
-  const input = form.querySelector("input");
-  socket.emit("enter_room", { payload: input.value }, backendDone);
-  input.value = "";
+  const room = form.querySelector("#roomName");
+  const nickname = form.querySelector("#nickname");
+
+  socket.emit("enter_room", room.value, nickname.value, showRoom);
+  roomName = room.value;
 }
 
 form.addEventListener("submit", handleRoomSubmit);
+
+// #1. 다른 사용자가 방에 입장했을때
+socket.on("welcome", (user, newCount) => {
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${newCount})`;
+  addMessage(`${user} arrived!`);
+});
+// #2. 다른 사용자가 방을 떠났을 때
+socket.on("bye", (left, newCount) => {
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${newCount})`;
+  addMessage(`${left} left ㅠㅠ`);
+});
+// #3. 사용자가 메시지를 입력했을 때
+// === socket.on("new_message", addMessage);
+socket.on("new_message", (msg) => addMessage(msg));
+// #4. 공개방 목록
+socket.on("room_change", (rooms) => {
+  const roomList = welcome.querySelector("ul");
+  roomList.innerHTML = "";
+
+  rooms.forEach((room) => {
+    const li = document.createElement("li");
+    li.innerText = room;
+    roomList.append(li);
+  });
+});
 
 /* const messageList = document.querySelector("ul");
 const nickForm = document.querySelector("#nickname");
